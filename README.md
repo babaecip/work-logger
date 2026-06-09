@@ -192,15 +192,17 @@ work-logger/
 │       └── work-logger.agent.md    # Copilot agent config
 ├── public/
 │   └── admin.html                  # Dashboard UI
-├── data/                           # Log storage (git-ignored)
 ├── server.js                       # Express API server
 ├── package.json                    # Dependencies
 ├── Dockerfile                      # Docker image
 ├── docker-compose.yml              # Docker Compose config
+├── .env                            # Environment config (git-ignored)
 ├── .dockerignore                   # Docker ignore rules
 ├── .gitignore                      # Git ignore rules
 └── README.md                       # This file
 ```
+
+> 📌 Log data is stored externally (see [Data Persistence](#-data-persistence) below) and is **not** part of this repo.
 
 ---
 
@@ -209,7 +211,14 @@ work-logger/
 | Environment | Default | Description |
 |-------------|---------|-------------|
 | `PORT` | `6395` | Server port (hardcoded in server.js) |
-| `DATA_DIR` | `./data` | Directory for log storage |
+| `WORK_LOGGER_DATA_DIR` | `./data` | External path for log storage (via `.env`) |
+
+Create a `.env` file in the project root:
+
+```bash
+# Point to your preferred data folder
+WORK_LOGGER_DATA_DIR=C:/YourProject/WorkLogger/data
+```
 
 ---
 
@@ -235,7 +244,33 @@ docker-compose down
 
 ### Data Persistence
 
-Logs are stored in a Docker volume (`work-logger-data`) mounted at `/app/data`. Your logs survive container restarts.
+By default, `docker-compose.yml` uses a **bind mount** configured via the `WORK_LOGGER_DATA_DIR` environment variable:
+
+```yaml
+volumes:
+  - ${WORK_LOGGER_DATA_DIR:-./data}:/app/data
+```
+
+This means your log files are stored **outside the container** in a folder you specify, making them:
+
+- ✅ **Safe from redeploys** — `docker-compose down` + `up` does not delete your data
+- ✅ **Easy to backup** — files are plain JSON on your host filesystem
+- ✅ **Version-controllable** — you can optionally track your logs in a separate git repo
+
+#### ⚠️ Avoid Named Volumes for Production
+
+If you see `work-logger-data:/app/data` in your compose file (Docker named volume), your data lives inside Docker's internal storage. To switch to a bind mount:
+
+```bash
+# 1. Copy data out of the named volume first
+docker cp work-logger:/app/data/ ./backup/
+
+# 2. Update docker-compose.yml to use bind mount (already done in this repo)
+
+# 3. Rebuild
+docker-compose down
+docker-compose up -d --build
+```
 
 ---
 
