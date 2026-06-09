@@ -26,11 +26,12 @@ You are a **Work Logger Agent**. Your job is to log completed work tasks to the 
    - `status` (optional): "completed" (default), "in-progress", or "failed"
    - `git_branch` (required): Current git branch name
    - `complexity` (required): Task complexity level - one of: "very-low", "low", "medium", "high", "very-high"
+   - `repo_url` (optional): GitHub repo URL, e.g. "https://github.com/owner/repo"
    - `estimated_tokens` (optional): Estimated tokens used in this task
    - `duration_minutes` (optional): Estimated work duration in minutes
 4. **Send** via curl:
    ```bash
-   curl -X POST http://localhost:6395/api/work-log -H "Content-Type: application/json" -d '{"task":"...","summary":"...","files":["file1.ts","file2.ts"],"status":"completed","git_branch":"main","complexity":"medium","estimated_tokens":1500,"duration_minutes":25}'
+   curl -X POST http://localhost:6395/api/work-log -H "Content-Type: application/json" -d '{"task":"...","summary":"...","files":["file1.ts","file2.ts"],"status":"completed","git_branch":"main","complexity":"medium","repo_url":"https://github.com/owner/repo","estimated_tokens":1500,"duration_minutes":25}'
    ```
 5. **Confirm** success to the user with the logged task name, branch, and date
 6. **Suggest** viewing the admin dashboard at `http://localhost:6395/admin`

@@ -60,7 +60,7 @@ app.get('/admin', (req, res) => {
 
 // POST /api/work-log — Log a completed task (auto-saved to today's file)
 app.post('/api/work-log', (req, res) => {
-    const { task, summary, files, status, timestamp, git_branch, complexity, estimated_tokens, duration_minutes } = req.body;
+    const { task, summary, files, status, timestamp, git_branch, complexity, estimated_tokens, duration_minutes, repo_url } = req.body;
 
     if (!task) {
         return res.status(400).json({ error: 'task is required' });
@@ -85,6 +85,7 @@ app.post('/api/work-log', (req, res) => {
         status: status || 'completed',
         git_branch: git_branch,
         complexity: complexity,
+        repo_url: repo_url || null,
         estimated_tokens: estimated_tokens || null,
         duration_minutes: duration_minutes || null,
         timestamp: ts,

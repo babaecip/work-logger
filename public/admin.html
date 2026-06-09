@@ -331,6 +331,7 @@
                         <div class="log-meta">
                             <span class="log-meta-item">🌿 ${escHtml(log.git_branch || 'N/A')}</span>
                             <span class="log-meta-item"><span class="complexity-badge ${complexityClass}">${complexityLabel}</span></span>
+                            ${log.repo_url ? `<span class="log-meta-item">🔗 <a href="${escHtml(log.repo_url)}" target="_blank" style="color: var(--accent); text-decoration: none;">${escHtml(log.repo_url)}</a></span>` : ''}
                             ${log.estimated_tokens ? `<span class="log-meta-item">📊 ${log.estimated_tokens} tokens</span>` : ''}
                             ${log.duration_minutes ? `<span class="log-meta-item">⏱️ ${log.duration_minutes} min</span>` : ''}
                         </div>
