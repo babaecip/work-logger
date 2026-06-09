@@ -1,6 +1,6 @@
 # 📋 Work Logger
 
-A lightweight local work logger API with a beautiful admin dashboard, designed for **GitHub Copilot** agents to track daily work activities.
+A lightweight local work logger API with a beautiful admin dashboard, designed for **GitHub Copilot** agents to **mandatorily** track every completed task across all workspaces.
 
 ![Node.js](https://img.shields.io/badge/Node.js-20-green) ![Express](https://img.shields.io/badge/Express-4.x-blue) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -8,6 +8,7 @@ A lightweight local work logger API with a beautiful admin dashboard, designed f
 
 ## ✨ Features
 
+- **🔒 Mandatory Task Logging** — Every completed task is logged automatically via Copilot agent
 - **RESTful API** — Log and retrieve work tasks via simple HTTP endpoints
 - **Admin Dashboard** — Beautiful dark-themed web UI to visualize daily logs
 - **Docker Support** — One-command deployment with Docker Compose
@@ -16,39 +17,159 @@ A lightweight local work logger API with a beautiful admin dashboard, designed f
 - **Token & Duration Tracking** — Monitor estimated tokens used and work duration
 - **Per-Day Storage** — Logs organized by date for easy management
 - **Auto-Refresh** — Dashboard auto-refreshes every 30 seconds
+- **Cross-Workspace** — Works across all VS Code workspaces via global instructions
 
 ---
 
-## 🚀 Quick Start
+## 📋 Prerequisites
 
-### Option 1: Run Directly with Node.js
+Before installing, make sure you have:
+
+| Requirement | Minimum Version | Check Command | Install |
+|------------|----------------|---------------|---------|
+| **Node.js** | 18+ (20 recommended) | `node --version` | [Download](https://nodejs.org/) |
+| **npm** | 9+ | `npm --version` | Comes with Node.js |
+| **Git** | Any recent version | `git --version` | [Download](https://git-scm.com/) |
+| **Docker** *(optional)* | 20.10+ | `docker --version` | [Download](https://docker.com/) |
+
+---
+
+## 🚀 Installation
+
+### Step 1: Clone the Repository
 
 ```bash
-# Clone the repository
+# Clone to your preferred location
 git clone https://github.com/babaecip/work-logger.git
+
+# Navigate into the project
 cd work-logger
+```
 
-# Install dependencies
+**Recommended locations:**
+- Windows: `C:\Users\%USERNAME%\work-logger`
+- macOS/Linux: `~/work-logger`
+
+### Step 2: Install Dependencies
+
+```bash
 npm install
+```
 
-# Start the server
+This installs:
+- `express` — Web framework for the API server
+- `cors` — Cross-origin resource sharing middleware
+
+### Step 3: Start the Server
+
+**Option A: Run directly with Node.js**
+```bash
 npm start
 ```
 
-The server will start at `http://localhost:6395`.
+You should see:
+```
+🚀 Work Logger API running on http://localhost:6395
+🌐 Admin dashboard: http://localhost:6395/admin
+📝 POST /api/work-log — Log a task
+📋 GET  /api/work-log?date=YYYY-MM-DD — View logs by date
+📅 GET  /api/work-log/all/dates — List all log dates
+❤️  GET  /health — Health check
+```
 
-### Option 2: Run with Docker
-
+**Option B: Run with Docker Compose**
 ```bash
-# Clone the repository
-git clone https://github.com/babaecip/work-logger.git
-cd work-logger
-
-# Start with Docker Compose
 docker-compose up -d
 ```
 
-This will build and run the container on port `6395` with persistent data volume.
+This will:
+- Build the Docker image from the Dockerfile
+- Start the container on port `6395`
+- Mount a persistent data volume (default: `./data`)
+- Auto-restart on crash (`unless-stopped`)
+
+**Option C: Run in background (Windows)**
+```powershell
+# Start in background using PowerShell
+Start-Process -NoNewWindow -FilePath "node" -ArgumentList "server.js" -WorkingDirectory "C:\Users\%USERNAME%\work-logger"
+
+# Or use PM2 for production
+npm install -g pm2
+pm2 start server.js --name work-logger
+pm2 save
+pm2 startup
+```
+
+### Step 4: Verify Installation
+
+Open your browser and go to:
+- **Dashboard:** http://localhost:6395/admin
+- **Health Check:** http://localhost:6395/health
+
+You should see the dashboard with "No tasks logged yet" message.
+
+---
+
+## 🤖 Mandatory Agent Setup (Per-Workspace)
+
+To enforce mandatory task logging in **every workspace**, you need to set up two things:
+
+### A. Global Instructions (One-time setup)
+
+Create or edit the file:
+```
+C:\Users\%USERNAME%\AppData\Roaming\Code\User\prompts\global-instructions.md
+```
+
+Add this content:
+```markdown
+# ⚠️ MANDATORY: Work Logger (Global)
+
+## Rule
+**After EVERY completed task (code edit, bug fix, feature, refactoring, etc.), you MUST call the Work Logger agent.**
+
+## How to Call
+1. After task completion, run agent `Work Logger` via `runSubagent` with `agentName: "Work Logger"`
+2. Include these parameters in the prompt:
+   - `task`: Short task name
+   - `git_branch`: Current active branch
+   - `complexity`: very-low / low / medium / high / very-high
+   - `summary`: Brief explanation of what was done
+   - `files`: Array of changed files
+   - `status`: completed / in-progress / failed
+   - `duration_minutes`: Estimated duration
+
+## Example Call
+runSubagent(agentName: "Work Logger", description: "Log task", prompt: "Log work: [task details]")
+
+## If Server is Down
+If the work logger server is not running (http://localhost:6395), inform the user that the logger failed to report.
+```
+
+### B. Per-Workspace Agent File
+
+Copy the agent file to each workspace you work in:
+
+```bash
+# Windows
+copy "%USERPROFILE%\work-logger\.github\agents\work-logger.agent.md" ".github\agents\"
+
+# macOS/Linux
+cp ~/work-logger/.github/agents/work-logger.agent.md .github/agents/
+```
+
+Or create `.github/agents/work-logger.agent.md` in your workspace with the content from the repo.
+
+### C. VS Code Settings (Optional but Recommended)
+
+Add to your VS Code `settings.json`:
+```json
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    { "text": "After completing any task, always log it using the Work Logger agent via runSubagent." }
+  ]
+}
+```
 
 ---
 
@@ -65,9 +186,9 @@ Content-Type: application/json
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `task` | string | Short task name (required) |
-| `git_branch` | string | Current git branch name (required) |
-| `complexity` | string | One of: `very-low`, `low`, `medium`, `high`, `very-high` (required) |
+| `task` | string | Short task name |
+| `git_branch` | string | Current git branch name |
+| `complexity` | string | One of: `very-low`, `low`, `medium`, `high`, `very-high` |
 
 **Optional Fields:**
 
@@ -76,12 +197,12 @@ Content-Type: application/json
 | `summary` | string | Description of what was done |
 | `files` | array | List of changed files |
 | `status` | string | `completed` (default), `in-progress`, or `failed` |
+| `repo_url` | string | GitHub repository URL |
 | `estimated_tokens` | number | Estimated tokens used |
 | `duration_minutes` | number | Work duration in minutes |
 | `timestamp` | string | ISO 8601 timestamp (defaults to now) |
 
-**Example:**
-
+**Example Request:**
 ```bash
 curl -X POST http://localhost:6395/api/work-log \
   -H "Content-Type: application/json" \
@@ -92,9 +213,32 @@ curl -X POST http://localhost:6395/api/work-log \
     "status": "completed",
     "git_branch": "main",
     "complexity": "low",
+    "repo_url": "https://github.com/user/my-project",
     "estimated_tokens": 1500,
     "duration_minutes": 12
   }'
+```
+
+**Example Response (201 Created):**
+```json
+{
+  "success": true,
+  "log": {
+    "id": 1717945200000,
+    "task": "Fix login timeout",
+    "summary": "Resolved auth timeout by increasing JWT expiry to 24h",
+    "files": ["auth/controller.js", "config/jwt.js"],
+    "status": "completed",
+    "git_branch": "main",
+    "complexity": "low",
+    "repo_url": "https://github.com/user/my-project",
+    "estimated_tokens": 1500,
+    "duration_minutes": 12,
+    "timestamp": "2026-06-09T10:00:00.000Z",
+    "logged_at": "2026-06-09T10:00:00.123Z"
+  },
+  "date": "2026-06-09"
+}
 ```
 
 ### Get Logs
@@ -129,7 +273,14 @@ DELETE /api/work-log?date=2026-06-09
 GET /health
 ```
 
-Returns server uptime and total number of log dates.
+**Response:**
+```json
+{
+  "status": "ok",
+  "uptime": 3600.5,
+  "dates": 15
+}
+```
 
 ---
 
@@ -143,33 +294,53 @@ The dashboard provides:
 - 📋 **Log List** — Detailed view of each log entry with status, complexity badge, files, and metadata
 - 🔄 **Auto-Refresh** — Updates every 30 seconds
 
+### Dashboard URL Shortcuts
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:6395/admin` | Main dashboard |
+| `http://localhost:6395/health` | Health check |
+| `http://localhost:6395/api/work-log/all/dates` | All log dates (JSON) |
+
 ---
 
 ## 🤖 GitHub Copilot Agent Integration
 
-This project includes a **Copilot Agent** that can log tasks automatically.
+### How the Mandatory Logging Works
 
-### Setup
+The Work Logger agent is designed to be called **automatically** after every task completion:
 
-1. Make sure the Work Logger server is running (`npm start` or `docker-compose up -d`)
-2. Copy the agent file to your project:
-   ```bash
-   cp .github/agents/work-logger.agent.md /path/to/your-project/.github/agents/
-   ```
-3. Use the agent in VS Code Copilot Chat
+1. **You complete a task** (edit code, fix bug, add feature, etc.)
+2. **Copilot detects** the task completion (via global instructions)
+3. **Copilot calls** the Work Logger agent via `runSubagent`
+4. **Agent logs** the task to the Work Logger API
+5. **Confirmation** is shown with task details and dashboard link
 
-### Usage Examples
+### Agent Call Flow
 
-Simply ask Copilot:
-- `"Log work: Fixed login bug"`
-- `"Report task: Refactored auth module"`
-- `"Catat kerjaan: Add dark mode support"`
+```
+User: "Fix the login bug"
+  ↓
+Copilot: [Fixes the bug in code]
+  ↓
+Copilot: [Calls Work Logger agent]
+  ↓
+Agent: POST http://localhost:6395/api/work-log
+  ↓
+User sees: ✅ Logged: Fix login bug | Branch: main | Complexity: low
+```
 
-The agent will automatically:
-1. Detect the current git branch
-2. Compose the log entry with complexity assessment
-3. POST it to the Work Logger API
-4. Confirm the logged entry
+### Trigger Phrases
+
+The agent responds to these trigger phrases:
+- "Log work"
+- "Log task"
+- "Report task"
+- "Work log"
+- "What did I do"
+- "Daily log"
+- "Kirim laporan" (Indonesian)
+- "Catat kerjaan" (Indonesian)
 
 ### Complexity Levels
 
@@ -183,6 +354,60 @@ The agent will automatically:
 
 ---
 
+## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env` file (git-ignored) to customize behavior:
+
+```env
+PORT=6395
+```
+
+### Data Storage
+
+Logs are stored as daily JSON files in the `data/` directory:
+```
+data/
+├── 2026-06-09.json
+├── 2026-06-08.json
+├── 2026-06-07.json
+└── ...
+```
+
+Each file contains an array of log entries for that day.
+
+---
+
+## 🐛 Troubleshooting
+
+### Server won't start
+```bash
+# Check if port 6395 is already in use
+netstat -ano | findstr :6395
+
+# Kill the process using the port
+taskkill /PID <PID> /F
+```
+
+### Agent not logging
+1. Verify server is running: `curl http://localhost:6395/health`
+2. Check the agent file exists in `.github/agents/work-logger.agent.md`
+3. Ensure global instructions include the mandatory logging rule
+4. Check VS Code Output panel for errors
+
+### Docker issues
+```bash
+# Rebuild from scratch
+docker-compose down -v
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -190,6 +415,8 @@ work-logger/
 ├── .github/
 │   └── agents/
 │       └── work-logger.agent.md    # Copilot agent config
+├── data/                           # Daily log files (auto-created)
+│   └── YYYY-MM-DD.json
 ├── public/
 │   └── admin.html                  # Dashboard UI
 ├── server.js                       # Express API server
@@ -198,88 +425,37 @@ work-logger/
 ├── docker-compose.yml              # Docker Compose config
 ├── .env                            # Environment config (git-ignored)
 ├── .dockerignore                   # Docker ignore rules
-├── .gitignore                      # Git ignore rules
 └── README.md                       # This file
 ```
 
-> 📌 Log data is stored externally (see [Data Persistence](#-data-persistence) below) and is **not** part of this repo.
-
 ---
 
-## ⚙️ Configuration
+## 📝 Changelog
 
-| Environment | Default | Description |
-|-------------|---------|-------------|
-| `PORT` | `6395` | Server port (hardcoded in server.js) |
-| `WORK_LOGGER_DATA_DIR` | `./data` | External path for log storage (via `.env`) |
+### v1.1.0 (2026-06-09)
+- ✅ Added mandatory task logging enforcement
+- ✅ Improved README with comprehensive installation guide
+- ✅ Added cross-workspace global instructions
+- ✅ Enhanced agent with better error handling
 
-Create a `.env` file in the project root:
-
-```bash
-# Point to your preferred data folder
-WORK_LOGGER_DATA_DIR=C:/YourProject/WorkLogger/data
-```
-
----
-
-## 🐳 Docker
-
-### Build & Run
-
-```bash
-docker-compose up -d --build
-```
-
-### View Logs
-
-```bash
-docker logs -f work-logger
-```
-
-### Stop
-
-```bash
-docker-compose down
-```
-
-### Data Persistence
-
-By default, `docker-compose.yml` uses a **bind mount** configured via the `WORK_LOGGER_DATA_DIR` environment variable:
-
-```yaml
-volumes:
-  - ${WORK_LOGGER_DATA_DIR:-./data}:/app/data
-```
-
-This means your log files are stored **outside the container** in a folder you specify, making them:
-
-- ✅ **Safe from redeploys** — `docker-compose down` + `up` does not delete your data
-- ✅ **Easy to backup** — files are plain JSON on your host filesystem
-- ✅ **Version-controllable** — you can optionally track your logs in a separate git repo
-
-#### ⚠️ Avoid Named Volumes for Production
-
-If you see `work-logger-data:/app/data` in your compose file (Docker named volume), your data lives inside Docker's internal storage. To switch to a bind mount:
-
-```bash
-# 1. Copy data out of the named volume first
-docker cp work-logger:/app/data/ ./backup/
-
-# 2. Update docker-compose.yml to use bind mount (already done in this repo)
-
-# 3. Rebuild
-docker-compose down
-docker-compose up -d --build
-```
+### v1.0.0 (2026-06-08)
+- ✅ Initial release with API and dashboard
+- ✅ Docker support
+- ✅ Copilot agent integration
+- ✅ Complexity and duration tracking
 
 ---
 
 ## 📄 License
 
-MIT License — feel free to use and modify.
+MIT License — use freely in your projects.
 
 ---
 
-## 🙏 Credits
+## 🙏 Contributing
 
-Built for developers who want to track their coding work with GitHub Copilot.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
