@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  work-logger:
+    build: .
+    container_name: work-logger
+    ports:
+      - "6395:6395"
+    volumes:
+      - work-logger-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:6395/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  work-logger-data:
